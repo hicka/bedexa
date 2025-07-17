@@ -20,4 +20,11 @@ class Guest extends Model
         'address',
         'notes',
     ];
+
+    public function bookings()
+    {
+        return $this->belongsToMany(Booking::class, 'booking_guest')
+            ->withPivot('is_primary')
+            ->withTimestamps();
+    }
 }

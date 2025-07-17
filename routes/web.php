@@ -27,6 +27,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/guests', \App\Livewire\GuestManager::class)->name('guests');
 
+    Route::get('/bookings', App\Livewire\BookingManager::class)->name('bookings');
+
 
 });
 
