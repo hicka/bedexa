@@ -40,47 +40,86 @@
                     <td class="w-36 px-2 py-1 border-r text-sm">{{ $room->room_number }}</td>
 
                     {{-- Date cells --}}
-                    @foreach ($dates as $date)
-                        @php
-                            $roomBookings = $bookings[$room->id] ?? collect();
-                                $cellKey = $date->toDateString();
-                                $booking = $roomBookings->first(fn($b) =>
-                $date->between($b->check_in, $b->check_out->subDay())
-            ) ?? null;
+                    @php
+                        $dateCount = $dates->count();
+                    @endphp
 
+                    @for ($idx = 0; $idx < $dateCount; $idx++)
+                        @php
+                            $date          = $dates[$idx];
+                            $roomBookings  = $bookings[$room->id] ?? collect();
+                            $booking       = $roomBookings->first(fn ($b) =>
+                                                $date->between($b->check_in, $b->check_out->subDay()));
                         @endphp
-                        <td class="w-28 h-12 relative border-r border-dashed">
-                            @if($booking && $date->isSameDay($booking->check_in))
-                                @php
-                                    $nights = $booking->nights;
-                                    $width  = $nights * 7;
-                                    $colors = [
-                                        'reserved'   => 'bg-yellow-200 text-yellow-900',
-                                        'checked_in' => 'bg-green-200 text-green-900',
-                                        'checked_out'=> 'bg-green-200 text-green-900',
-                                        'occupied'   => 'bg-blue-200 text-blue-900',
-                                    ];
-                                    $barClass = $colorMap[$booking->status] ?? 'bg-slate-200 text-gray-800';
-                                @endphp
-                                <a  href="{{ route('bookings.edit',$booking->booking) }}"
-                                    class="absolute left-0 top-0 h-full px-2 py-1 text-xs overflow-hidden rounded {{ $barClass }}"
-                                    style="width: {{ $width }}rem">
-                                    {{ $booking->booking->guests->pluck('full_name')->implode(', ') }}
-                                    <span class="block mt-1">
-                                        @switch($booking->payment_state)
-                                            @case('paid')      <span class="bg-green-600 text-white px-1 rounded">Paid</span> @break
-                                            @case('part-paid') <span class="bg-pink-600 text-white px-1 rounded">Part-paid</span> @break
-                                            @default           <span class="bg-orange-600 text-white px-1 rounded">Unpaid</span>
-                                        @endswitch
-                                    </span>
+
+                        {{-- ─── Empty cell ───────────────────────────────────────── --}}
+                        @if (!$booking)
+                            <td  class="w-28 h-12 border-r border-dashed cursor-pointer
+                    hover:bg-sky-50 dark:hover:bg-slate-800"
+                                 @click="$dispatch('openQuickBooking', { roomId: {{ $room->id }}, date: '{{ $date->toDateString() }}' })">
+                            </td>
+                            @continue
+                        @endif
+
+
+                        {{-- ─── Booking START cell → render <td colspan="nights"> ───── --}}
+                        @if ($date->isSameDay($booking->check_in))
+                            @php
+                                // how many cells remain in the month?
+                                $remaining = $dateCount - $idx;
+                                $span      = min($booking->nights, $remaining);
+
+                                $colors = [
+                                    'reserved'    => ['bg' => 'bg-amber-300 text-amber-900', 'bar'=>'bg-amber-500'],
+                                    'checked_in'  => ['bg' => 'bg-green-200 text-green-900', 'bar'=>'bg-green-500'],
+                                    'checked_out' => ['bg' => 'bg-green-200 text-green-900', 'bar'=>'bg-green-500'],
+                                    'occupied'    => ['bg' => 'bg-blue-200  text-blue-900',  'bar'=>'bg-blue-500' ],
+                                ];
+                                $c = $colors[$booking->booking->status] ?? ['bg'=>'bg-slate-200 text-gray-800', 'bar'=>'bg-slate-500'];
+
+                                $names = $booking->booking->guests->pluck('full_name');
+                                $label = $names->first() . ($names->count() > 1 ? ' +' . ($names->count()-1) : '');
+                            @endphp
+
+                            <td  colspan="{{ $span }}"
+                                 class="relative h-12 border-r border-dashed p-0">
+
+                                <a href="{{ route('bookings.edit', $booking->booking) }}"
+                                   class="flex items-center h-full pr-3 text-xs whitespace-nowrap
+                      overflow-hidden {{ $c['bg'] }} {{ $c['text'] ?? '' }} rounded-r-md">
+
+                                    <span class="h-full w-1.5 mr-2 {{ $c['bar'] }} rounded-l-md"></span>
+
+                                    {{-- guest label --}}
+                                    <span class="truncate leading-snug">
+                    <strong>{{ $label }}</strong><br>
+                    <span class="opacity-70 text-[10px]">
+                        {{ ucfirst($booking->booking->source->name ?? 'Direct') }}
+                    </span>
+                </span>
+
+                                    {{-- payment badge --}}
+                                    <span class="ml-auto px-1 py-0.5 rounded text-[10px] font-medium
+                             @class([
+                                 'bg-green-600 text-white'  => $booking->payment_state === 'paid',
+                                 'bg-pink-600  text-white'  => $booking->payment_state === 'part-paid',
+                                 'bg-orange-600 text-white' => $booking->payment_state === 'unpaid',
+                             ])">
+                    {{ $booking->payment_state === 'part-paid' ? 'Part-paid' : ucfirst($booking->payment_state) }}
+                </span>
                                 </a>
-                            @endif
-                        </td>
-                    @endforeach
+                            </td>
+
+                            @php
+                                // skip the cells we just spanned
+                                $idx += $span - 1;
+                            @endphp
+                        @endif
+                    @endfor
                 </tr>
             @endforeach
             </tbody>
         </table>
     </div>
-
+    <livewire:booking.quick-create wire:key="quick-booking" />
 </div>

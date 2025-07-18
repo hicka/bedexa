@@ -35,7 +35,7 @@ class BookingRoom extends Model
 
     public function getNightsAttribute()
     {
-        return $this->check_in->diffInDays($this->check_out);
+        return max(1, $this->check_in->diffInDays($this->check_out));
     }
     public function getPaymentStateAttribute()
     {
