@@ -21,15 +21,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('settings/password', Password::class)->name('settings.password');
     Route::get('settings/appearance', Appearance::class)->name('settings.appearance');
 
-
-    Route::get('/room-categories', RoomCategoryManager::class)->name('room-categories');
-    Route::get('/rooms', \App\Livewire\RoomManager::class)->name('rooms');
-
-    Route::get('/guests', \App\Livewire\GuestManager::class)->name('guests');
-
-    Route::get('/bookings', App\Livewire\BookingManager::class)->name('bookings');
-
-
 });
 
 require __DIR__.'/auth.php';
