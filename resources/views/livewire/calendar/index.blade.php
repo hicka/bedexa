@@ -38,7 +38,7 @@
          @keydown.window.arrow-left="$wire.prevMonth()"
          @keydown.window.arrow-right="$wire.nextMonth()"
          class="overflow-x-auto" >
-        <table wire:key="calendar-{{ $month }}" class="border-collapse min-w-[900px]">
+        <table wire:key="calendar-{{ $month }}-{{ $version }}" class="border-collapse min-w-[900px]">
             <thead class="sticky top-0 bg-white dark:bg-slate-900 z-10">
             <tr>
                 <th class="w-36 border-r"></th>

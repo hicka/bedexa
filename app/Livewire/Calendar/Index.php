@@ -9,13 +9,23 @@ use Carbon\Carbon;
 
 class Index extends Component
 {
+    public int $version = 0;
     public string $month;    // format: 2024-06
     public ?int   $roomTypeFilter = null;
     public ?string $statusFilter  = null;  // reserved / occupied / etc.
 
+    protected $listeners = [
+        'bookingCreated' => 'refreshCalendar',
+    ];
+
     public function mount()
     {
         $this->month = now()->format('Y-m');
+    }
+
+    public function refreshCalendar(): void
+    {
+        $this->version++;           // bump → computed properties recalc
     }
 
     /* ───── Month navigation actions ───── */
@@ -46,6 +56,8 @@ class Index extends Component
 
     public function getBookingsProperty(): Collection
     {
+        $this->version;
+
         $start = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
         $end   = $start->copy()->endOfMonth();
 
