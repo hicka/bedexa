@@ -61,10 +61,19 @@ class Index extends Component
         $start = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
         $end   = $start->copy()->endOfMonth();
 
-        return BookingRoom::with(['room','booking'])
+        return BookingRoom::with(['room', 'booking'])
+            ->where(function ($q) use ($start, $end) {
+                $q->whereBetween('check_in',  [$start, $end])          // A
+                ->orWhereBetween('check_out', [$start, $end])        // B
+                ->orWhere(fn ($q) =>                                 // C surrounds month
+                $q->where('check_in','<', $start)
+                    ->where('check_out','>', $end));
+            })
             ->get()
             ->groupBy('room_id')
-            ->mapWithKeys(fn ($items, $key) => [(int) $key => $items]);
+            ->mapWithKeys(fn ($items, $key) => [                       // ← string key
+                (string) $key => $items
+            ]);
     }
 
     public function render()

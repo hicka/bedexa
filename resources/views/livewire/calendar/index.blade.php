@@ -91,10 +91,22 @@
                         @endif
 
                         {{-- Booking START cell (render the bar) ------------------------ --}}
-                        @if ($date->isSameDay($booking->check_in))
+                        @php
+                            /* start a bar if it's the real check-in OR it's the 1st of the month */
+      $isStartOfBar = $date->isSameDay($booking->check_in)
+                    || $date->day === 1;
+                        @endphp
+                        @if ($isStartOfBar)
                             @php
                                 $remaining = $dateCount - $idx;
-                                $span      = min($booking->nights, $remaining);
+                                    // nights left *including today*
+    $span = $date->copy()->diffInDays($booking->check_out, false); // 21 on 22 Jul
+
+    // but never paint beyond the current calendar month
+    $span = min($span, $dateCount - $idx);
+
+    // guarantee at least one cell
+    $span = max(1, $span);
                                 $colors    = [
                                     'reserved'   => ['bg'=>'bg-amber-300','bar'=>'bg-amber-500','text'=>'text-amber-900'],
                                     'checked_in' => ['bg'=>'bg-green-200','bar'=>'bg-green-500','text'=>'text-green-900'],
@@ -108,31 +120,39 @@
 
                             <td  wire:key="bar-{{ $booking->id }}"
                                  colspan="{{ $span }}"
-                                 class="relative h-12 border-r border-dashed p-0">
+                                 style="width: {{ $span * 7 }}rem"
+                                 class="relative h-12 border-r border-dashed p-0
+            {{ $c['bg'] }} {{ $c['text'] }}">
 
                                 <a href="{{ route('bookings.edit', $booking->booking) }}"
-                                   class="flex items-center h-full pr-3 text-xs whitespace-nowrap overflow-hidden
-                      {{ $c['bg'] }} {{ $c['text'] }} rounded-r-md">
+                                   class="flex items-center h-full w-full text-xs whitespace-nowrap overflow-hidden">
 
                                     <span class="h-full w-1.5 mr-2 {{ $c['bar'] }} rounded-l-md"></span>
 
                                     <span class="truncate leading-snug">
-                    <strong>{{ $label }}</strong><br>
-                    <span class="opacity-70 text-[10px]">
-                        {{ ucfirst($booking->booking->source->name ?? 'Direct') }}
-                    </span>
-                </span>
+            <strong>{{ $label }} {{$span}}</strong><br>
+            <span class="opacity-70 text-[10px]">
+                {{ ucfirst($booking->booking->source->name ?? 'Direct') }}
+            </span>
+        </span>
 
                                     <span class="ml-auto px-1 py-0.5 rounded text-[10px] font-medium
-                             @class([
-                                 'bg-green-600 text-white'  => $booking->payment_state === 'paid',
-                                 'bg-pink-600  text-white'  => $booking->payment_state === 'part-paid',
-                                 'bg-orange-600 text-white' => $booking->payment_state === 'unpaid',
-                             ])">
-                    {{ $booking->payment_state === 'part-paid' ? 'Part-paid' : ucfirst($booking->payment_state) }}
-                </span>
+             @class([
+                 'bg-green-600 text-white'  => $booking->payment_state === 'paid',
+                 'bg-pink-600  text-white'  => $booking->payment_state === 'part-paid',
+                 'bg-orange-600 text-white' => $booking->payment_state === 'unpaid',
+             ])">
+            {{ $booking->payment_state === 'part-paid' ? 'Part-paid'
+                                                        : ucfirst($booking->payment_state) }}
+        </span>
                                 </a>
                             </td>
+
+                            @php
+                                if ($span > 1) {
+                                    $idx += $span - 1;   // skip the cells we just covered
+                                }
+                            @endphp
                         @else
                             {{-- Inside an existing booking bar – render invisible placeholder --}}
                             <td wire:key="pad-{{ $room->id }}-{{ $date->toDateString() }}"
