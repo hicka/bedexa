@@ -46,6 +46,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{source}/edit', \App\Livewire\BookingSource\Create::class)->name('edit');
     });
 
+    Route::prefix('guests')->name('guests.')->group(function () {
+        Route::get('/',            \App\Livewire\Guest\Index::class)->name('index');
+        Route::get('/create',      \App\Livewire\Guest\Create::class)->name('create');
+        Route::get('/{guest}/edit', \App\Livewire\Guest\Create::class)->name('edit');
+    });
+
 });
 
 require __DIR__.'/auth.php';
