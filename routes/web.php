@@ -52,6 +52,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/{guest}/edit', \App\Livewire\Guest\Create::class)->name('edit');
     });
 
+    Route::get('/calendar', \App\Livewire\Calendar\Index::class)->name('calendar');
+
 });
 
 require __DIR__.'/auth.php';

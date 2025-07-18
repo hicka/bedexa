@@ -32,4 +32,14 @@ class BookingRoom extends Model
     {
         return $this->belongsTo(Room::class);
     }
+
+    public function getNightsAttribute()
+    {
+        return $this->check_in->diffInDays($this->check_out);
+    }
+    public function getPaymentStateAttribute()
+    {
+        return $this->booking->balance_due === 0 ? 'paid'
+            : ($this->booking->total_paid > 0 ? 'part-paid' : 'unpaid');
+    }
 }
