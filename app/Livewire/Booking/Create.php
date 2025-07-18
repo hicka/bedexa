@@ -3,6 +3,7 @@
 namespace App\Livewire\Booking;
 
 use App\Models\Booking;
+use App\Models\BookingSource;
 use App\Models\Guest;
 use App\Models\Room;
 use Illuminate\Support\Collection;
@@ -12,6 +13,7 @@ class Create extends Component
 {
     // form fields
     public ?int $bookingId = null;
+    public ?int $booking_source_id = null;
     public array $rooms = [ ['room_id'=>null,'check_in'=>null,'check_out'=>null,'price'=>null] ];
     public array $guest_ids = [];
     public string $status = 'reserved';
@@ -21,6 +23,7 @@ class Create extends Component
     // dropdown sources
     public array $roomOptions = [];
     public Collection $guests;
+    public Collection $sources;
 
     public function mount($existingBooking = null)
     {
@@ -29,6 +32,11 @@ class Create extends Component
         $this->roomOptions = Room::with('type')->get()
             ->map(fn($r)=>['id'=>$r->id,'label'=>$r->room_number.' ('.$r->type->name.')'])
             ->toArray();
+
+        $this->sources = BookingSource::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id','name']);
+
 
         $this->guests = Guest::orderBy('full_name')->get();
 
