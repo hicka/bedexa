@@ -18,6 +18,11 @@ class BookingRoom extends Model
         'housekeeping_status',
     ];
 
+    protected $casts = [
+        'check_in' => 'datetime',
+        'check_out' => 'datetime'
+    ];
+
     public function booking()
     {
         return $this->belongsTo(Booking::class);

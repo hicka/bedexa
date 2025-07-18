@@ -19,6 +19,9 @@ class Booking extends Model
         'notes',
         'internal_notes',
         'booking_source_id',
+        'room_total','service_charge','tgst','green_tax',
+        'discount_amount','tax_inclusive',
+        'total_amount','total_paid','balance_due',
     ];
 
     public function team()
@@ -33,7 +36,8 @@ class Booking extends Model
 
     public function guests()
     {
-        return $this->belongsToMany(Guest::class);
+        return $this->belongsToMany(Guest::class, 'booking_guest')
+            ->withTimestamps();
     }
 
     public function source()
@@ -44,5 +48,14 @@ class Booking extends Model
     public function payments()
     {
         return $this->hasMany(BookingPayment::class);
+    }
+
+    public function refreshPaidTotals(): void
+    {
+        $paid = $this->payments()->sum('amount');
+        $this->update([
+            'total_paid'  => $paid,
+            'balance_due' => max($this->total_amount - $paid, 0),
+        ]);
     }
 }

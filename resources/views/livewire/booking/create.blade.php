@@ -71,13 +71,10 @@
     </x-card>
 
     {{-- ───────────── Guests Section ───────────── --}}
+    {{-- Guests --}}
     <x-card>
         <x-slot name="header">Guests</x-slot>
-
-        <div class="space-y-4">
-            <label class="text-sm font-medium block">Select / Add Guest(s)</label>
-            <livewire:guest-autocomplete :selectedGuests="$guest_ids" />
-        </div>
+        <livewire:guest-picker wire:model.live="guest_ids" />
     </x-card>
 
     {{-- ───────────── Booking Details Section ───────────── --}}
@@ -113,6 +110,10 @@
             />
         </div>
     </x-card>
+
+    @if($bookingId)
+        <livewire:booking.payments :booking="$booking" wire:key="payments-{{ $bookingId }}" />
+    @endif
 
     {{-- ───────────── Actions ───────────── --}}
     <div class="flex justify-end gap-3">
