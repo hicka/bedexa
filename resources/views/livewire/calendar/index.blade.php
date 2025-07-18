@@ -1,6 +1,30 @@
+
+
+
 <div>
 
     <x-page-heading title="Reservations"/>
+
+    {{-- ─── Calendar Navigation ─────────────────────────────────── --}}
+    <div class="flex items-center justify-between mb-6">
+
+        {{-- Prev / Next buttons --}}
+        <div class="flex items-center gap-2">
+            <x-button size="sm" variant="ghost"  wire:click="prevMonth">« Prev</x-button>
+            <x-button size="sm" variant="ghost"  wire:click="nextMonth">Next »</x-button>
+        </div>
+
+        {{-- Current month label --}}
+        <h2 class="text-lg font-semibold">
+            {{ \Carbon\Carbon::createFromFormat('Y-m', $month)->isoFormat('MMMM YYYY') }}
+        </h2>
+
+        {{-- Month picker --}}
+        <input  type="month"
+                value="{{ $month }}"
+                class="border rounded px-2 py-1 text-sm dark:bg-slate-900 dark:border-slate-600"
+                wire:change="gotoMonth($event.target.value)">
+    </div>
 
     {{-- Legend --}}
     <div class="flex gap-4 mb-4 text-sm">
@@ -10,8 +34,11 @@
     </div>
 
     {{-- Grid wrapper allows horizontal scroll --}}
-    <div class="overflow-x-auto">
-        <table class="border-collapse min-w-[900px]">
+    <div x-data
+         @keydown.window.arrow-left="$wire.prevMonth()"
+         @keydown.window.arrow-right="$wire.nextMonth()"
+         class="overflow-x-auto" >
+        <table wire:key="calendar-{{ $month }}" class="border-collapse min-w-[900px]">
             <thead class="sticky top-0 bg-white dark:bg-slate-900 z-10">
             <tr>
                 <th class="w-36 border-r"></th>
@@ -46,51 +73,49 @@
 
                     @for ($idx = 0; $idx < $dateCount; $idx++)
                         @php
-                            $date          = $dates[$idx];
-                            $roomBookings  = $bookings[$room->id] ?? collect();
-                            $booking       = $roomBookings->first(fn ($b) =>
-                                                $date->between($b->check_in, $b->check_out->subDay()));
+                            $date         = $dates[$idx];
+                            $roomBookings = $bookings->get((string) $room->id, collect());
+                            $booking      = $roomBookings->first(fn ($b) =>
+                                $date->between($b->check_in, $b->check_out->copy()->subDay())
+                            );
                         @endphp
 
-                        {{-- ─── Empty cell ───────────────────────────────────────── --}}
+                        {{-- Empty cell ------------------------------------------------- --}}
                         @if (!$booking)
-                            <td  class="w-28 h-12 border-r border-dashed cursor-pointer
-                    hover:bg-sky-50 dark:hover:bg-slate-800"
-                                 @click="$dispatch('openQuickBooking', { roomId: {{ $room->id }}, date: '{{ $date->toDateString() }}' })">
+                            <td wire:key="cell-{{ $room->id }}-{{ $date->toDateString() }}"
+                                class="w-28 h-12 border-r border-dashed cursor-pointer
+                   hover:bg-sky-50 dark:hover:bg-slate-800"
+                                @click="$dispatch('openQuickBooking', { roomId: {{ $room->id }}, date: '{{ $date->toDateString() }}' })">
                             </td>
                             @continue
                         @endif
 
-
-                        {{-- ─── Booking START cell → render <td colspan="nights"> ───── --}}
+                        {{-- Booking START cell (render the bar) ------------------------ --}}
                         @if ($date->isSameDay($booking->check_in))
                             @php
-                                // how many cells remain in the month?
                                 $remaining = $dateCount - $idx;
                                 $span      = min($booking->nights, $remaining);
-
-                                $colors = [
-                                    'reserved'    => ['bg' => 'bg-amber-300 text-amber-900', 'bar'=>'bg-amber-500'],
-                                    'checked_in'  => ['bg' => 'bg-green-200 text-green-900', 'bar'=>'bg-green-500'],
-                                    'checked_out' => ['bg' => 'bg-green-200 text-green-900', 'bar'=>'bg-green-500'],
-                                    'occupied'    => ['bg' => 'bg-blue-200  text-blue-900',  'bar'=>'bg-blue-500' ],
+                                $colors    = [
+                                    'reserved'   => ['bg'=>'bg-amber-300','bar'=>'bg-amber-500','text'=>'text-amber-900'],
+                                    'checked_in' => ['bg'=>'bg-green-200','bar'=>'bg-green-500','text'=>'text-green-900'],
+                                    'checked_out'=> ['bg'=>'bg-green-200','bar'=>'bg-green-500','text'=>'text-green-900'],
+                                    'occupied'   => ['bg'=>'bg-blue-200' ,'bar'=>'bg-blue-500' ,'text'=>'text-blue-900'],
                                 ];
-                                $c = $colors[$booking->booking->status] ?? ['bg'=>'bg-slate-200 text-gray-800', 'bar'=>'bg-slate-500'];
-
+                                $c = $colors[$booking->booking->status] ?? ['bg'=>'bg-slate-200','bar'=>'bg-slate-500','text'=>'text-gray-800'];
                                 $names = $booking->booking->guests->pluck('full_name');
                                 $label = $names->first() . ($names->count() > 1 ? ' +' . ($names->count()-1) : '');
                             @endphp
 
-                            <td  colspan="{{ $span }}"
+                            <td  wire:key="bar-{{ $booking->id }}"
+                                 colspan="{{ $span }}"
                                  class="relative h-12 border-r border-dashed p-0">
 
                                 <a href="{{ route('bookings.edit', $booking->booking) }}"
-                                   class="flex items-center h-full pr-3 text-xs whitespace-nowrap
-                      overflow-hidden {{ $c['bg'] }} {{ $c['text'] ?? '' }} rounded-r-md">
+                                   class="flex items-center h-full pr-3 text-xs whitespace-nowrap overflow-hidden
+                      {{ $c['bg'] }} {{ $c['text'] }} rounded-r-md">
 
                                     <span class="h-full w-1.5 mr-2 {{ $c['bar'] }} rounded-l-md"></span>
 
-                                    {{-- guest label --}}
                                     <span class="truncate leading-snug">
                     <strong>{{ $label }}</strong><br>
                     <span class="opacity-70 text-[10px]">
@@ -98,7 +123,6 @@
                     </span>
                 </span>
 
-                                    {{-- payment badge --}}
                                     <span class="ml-auto px-1 py-0.5 rounded text-[10px] font-medium
                              @class([
                                  'bg-green-600 text-white'  => $booking->payment_state === 'paid',
@@ -109,11 +133,10 @@
                 </span>
                                 </a>
                             </td>
-
-                            @php
-                                // skip the cells we just spanned
-                                $idx += $span - 1;
-                            @endphp
+                        @else
+                            {{-- Inside an existing booking bar – render invisible placeholder --}}
+                            <td wire:key="pad-{{ $room->id }}-{{ $date->toDateString() }}"
+                                class="w-28 h-12 border-r border-dashed"></td>
                         @endif
                     @endfor
                 </tr>

@@ -15,16 +15,15 @@ class QuickCreate extends Component
     public string $check_out = '';
     public string $status    = 'reserved';
 
-    protected $listeners = ['openQuickBooking' => 'show'];
+    protected $listeners = ['openQuickBooking'];
 
 
-    public function show($data)
+    public function openQuickBooking($roomId, $date): void
     {
-        $this->room_id   = $data['roomId'];
-        $this->check_in  = $data['date'];
-        $this->check_out = \Carbon\Carbon::parse($this->check_in)
-            ->addDay()->toDateString();
-        $this->open = true;        // show the modal
+        $this->room_id   = $roomId;
+        $this->check_in  = $date;
+        $this->check_out = Carbon::parse($this->check_in)->addDay()->toDateString();
+        $this->open      = true;
     }
 
     public function save()

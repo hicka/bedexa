@@ -20,8 +20,8 @@ class Create extends Component
     public array $rooms = [['room_id' => null, 'check_in' => null, 'check_out' => null, 'price' => null]];
     public array $guest_ids = [];
     public string $status = 'reserved';
-    public string $notes = '';
-    public string $internal_notes = '';
+    public ?string $notes = '';
+    public ?string $internal_notes = '';
 
     // dropdown sources
     public array $roomOptions = [];

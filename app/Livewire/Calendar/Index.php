@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Calendar;
 
+use Illuminate\Support\Collection;
 use Livewire\Component;
 use App\Models\{Room,BookingRoom};
 use Carbon\Carbon;
@@ -17,6 +18,25 @@ class Index extends Component
         $this->month = now()->format('Y-m');
     }
 
+    /* ───── Month navigation actions ───── */
+    public function prevMonth(): void
+    {
+        $this->month = \Carbon\Carbon::createFromFormat('Y-m', $this->month)
+            ->subMonth()->format('Y-m');
+    }
+
+    public function nextMonth(): void
+    {
+        $this->month = \Carbon\Carbon::createFromFormat('Y-m', $this->month)
+            ->addMonth()->format('Y-m');
+    }
+
+    public function gotoMonth(string $value): void
+    {
+        // $value comes from <input type="month"> e.g. "2025-04"
+        $this->month = $value;
+    }
+
     public function getDatesProperty()
     {
         $start = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
@@ -24,9 +44,19 @@ class Index extends Component
             ->map(fn($i) => $start->copy()->addDays($i));
     }
 
+    public function getBookingsProperty(): Collection
+    {
+        $start = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
+        $end   = $start->copy()->endOfMonth();
+
+        return BookingRoom::with(['room','booking'])
+            ->get()
+            ->groupBy('room_id')
+            ->mapWithKeys(fn ($items, $key) => [(int) $key => $items]);
+    }
+
     public function render()
     {
-        // rooms (optionally filtered by type)
         $rooms = Room::with('type')
             ->when($this->roomTypeFilter, fn($q) =>
             $q->where('room_type_id', $this->roomTypeFilter))
@@ -34,25 +64,9 @@ class Index extends Component
             ->orderBy('room_number')
             ->get();
 
-        // bookings overlapping current month
-        $start = Carbon::createFromFormat('Y-m', $this->month)->startOfMonth();
-        $end   = $start->copy()->endOfMonth();
-
-        $bookings = BookingRoom::with(['room','booking'])
-            ->where(function($q) use ($start,$end){
-                $q->whereBetween('check_in',  [$start, $end])
-                    ->orWhereBetween('check_out', [$start, $end])
-                    ->orWhere(function($q) use ($start,$end){
-                        $q->where('check_in','<=',$start)->where('check_out','>=',$end);
-                    });
-            })
-            ->when($this->statusFilter, fn($q) =>
-            $q->where('status',$this->statusFilter))
-            ->get();
-
         return view('livewire.calendar.index', [
             'rooms'    => $rooms,
-            'bookings' => $bookings->groupBy('room_id'),
+            'bookings' => $this->bookings,   // ← computed property
             'dates'    => $this->dates,
         ]);
     }
