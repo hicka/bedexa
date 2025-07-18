@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use App\BelongsToTeam;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Guest extends Model
 {
     use HasFactory;
+    use BelongsToTeam;
 
     protected $fillable = [
         'team_id',
@@ -32,5 +34,11 @@ class Guest extends Model
     public function team()
     {
         return $this->belongsTo(Team::class);
+    }
+
+    public function bookings()
+    {
+        return $this->belongsToMany(Booking::class, 'booking_guest')
+            ->withTimestamps();
     }
 }

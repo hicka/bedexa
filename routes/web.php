@@ -27,12 +27,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/room-types/create', Create::class)->name('room-types.create');
     Route::get('/room-types/{id}/edit', Create::class)->name('room-types.edit');
 
-
 // Room routes
     Route::prefix('rooms')->name('rooms.')->group(function () {
         Route::get('/', \App\Livewire\Room\Index::class)->name('index');
         Route::get('/create', \App\Livewire\Room\Create::class)->name('create');
         Route::get('/{room}/edit', \App\Livewire\Room\Create::class)->name('edit');
+    });
+
+    Route::prefix('bookings')->name('bookings.')->group(function () {
+        Route::get('/', \App\Livewire\Booking\Index::class)->name('index');
+        Route::get('/create', \App\Livewire\Booking\Create::class)->name('create');
+        Route::get('/{booking}/edit', \App\Livewire\Booking\Create::class)->name('edit');
     });
 
 });
