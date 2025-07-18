@@ -12,17 +12,23 @@
             </a>
 
             <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Booking')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('bookings.index')" :current="request()->routeIs('bookings*')" wire:navigate>{{ __('Bookings') }}</flux:navlist.item>
+                <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
+                    <flux:navlist.item icon="home" :href="route('bookings.index')" :current="request()->routeIs('bookings*')" wire:navigate>{{ __('Reservations') }}</flux:navlist.item>
+                <flux:navlist.item icon="home" :href="route('rooms.index')" :current="request()->routeIs('rooms*')" wire:navigate>{{ __('Guests') }}</flux:navlist.item>
+                <flux:navlist.item icon="home" :href="route('rooms.index')" :current="request()->routeIs('rooms*')" wire:navigate>{{ __('Rooms') }}</flux:navlist.item>
+
+            </flux:navlist>
+
+
+
+            <flux:navlist variant="outline">
+                <flux:navlist.group :heading="__('Configure')" class="grid">
+                    <flux:navlist.item icon="home" :href="route('room-types.index')" :current="request()->routeIs('room-types*')" wire:navigate>{{ __('Room Types') }}</flux:navlist.item>
+                    <flux:navlist.item icon="home" :href="route('sources.index')" :current="request()->routeIs('sources*')" wire:navigate>{{ __('Booking Sources') }}</flux:navlist.item>
+
                 </flux:navlist.group>
             </flux:navlist>
 
-            <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Room')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('rooms.index')" :current="request()->routeIs('rooms*')" wire:navigate>{{ __('Rooms') }}</flux:navlist.item>
-                    <flux:navlist.item icon="home" :href="route('room-types.index')" :current="request()->routeIs('room-types*')" wire:navigate>{{ __('Room Types') }}</flux:navlist.item>
-                </flux:navlist.group>
-            </flux:navlist>
 
 
 

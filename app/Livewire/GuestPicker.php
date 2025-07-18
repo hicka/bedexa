@@ -50,9 +50,9 @@ class GuestPicker extends Component
             'type'           => 'foreign',
         ]);
 
-        $this->selected[] = $guest->id;
+        $this->guest_ids[] = $guest->id;
+        $this->reset('search');
         $this->reset(['showModal','new_name','new_passport','new_nationality']);
-        $this->dispatch('guestsSelected', array_keys($this->selected));
     }
 
     public function getSelectedMapProperty(): array
