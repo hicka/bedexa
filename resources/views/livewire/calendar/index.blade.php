@@ -1,6 +1,15 @@
-
-
-
+@section('css')
+    <style>
+        td[style*="--drag-days"]::after {
+            content: '';
+            position: absolute; inset: 0;
+            background: rgba(0,0,0,.1);
+            /* width grows via the inline var set in onMove: */
+            width: calc(100% + var(--drag-days) * 7rem);
+            pointer-events: none;
+        }
+    </style>
+    @endsection
 <div>
 
     <x-page-heading title="Reservations"/>
@@ -116,15 +125,20 @@
                                 $c = $colors[$booking->booking->status] ?? ['bg'=>'bg-slate-200','bar'=>'bg-slate-500','text'=>'text-gray-800'];
                                 $names = $booking->booking->guests->pluck('full_name');
                                 $label = $names->first() . ($names->count() > 1 ? ' +' . ($names->count()-1) : '');
+                                $pivotId = $booking->id;
                             @endphp
 
-                            <td  wire:key="bar-{{ $booking->id }}"
-                                 colspan="{{ $span }}"
+                            <td  colspan="{{ $span }}"
                                  style="width: {{ $span * 7 }}rem"
                                  class="relative h-12 border-r border-dashed p-0
-            {{ $c['bg'] }} {{ $c['text'] }}">
+            {{ $c['bg'] }} {{ $c['text'] }}"
+                                 x-data="resizeBar(
+         {{ $pivotId }},
+         '{{ $booking->check_out->toDateString() }}'
+     )">
 
-                                <a href="{{ route('bookings.edit', $booking->booking) }}"
+
+                            <a href="{{ route('bookings.edit', $booking->booking) }}"
                                    class="flex items-center h-full w-full text-xs whitespace-nowrap overflow-hidden">
 
                                     <span class="h-full w-1.5 mr-2 {{ $c['bar'] }} rounded-l-md"></span>
@@ -146,6 +160,10 @@
                                                         : ucfirst($booking->payment_state) }}
         </span>
                                 </a>
+                                <span class="absolute right-0 top-0 h-full w-3 cursor-ew-resize"
+                                      style="margin-right:-2px"
+                                      @pointerdown.stop.prevent="begin($event)"></span>
+</span>
                             </td>
 
                             @php

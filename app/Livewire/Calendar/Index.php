@@ -54,6 +54,22 @@ class Index extends Component
             ->map(fn($i) => $start->copy()->addDays($i));
     }
 
+    public function updateBookingRoomDates(int $pivotId, string $newCheckOut): void
+    {
+        $pivot = \App\Models\BookingRoom::findOrFail($pivotId);
+
+        // safety guard
+        if (\Illuminate\Support\Carbon::parse($newCheckOut)->lte($pivot->check_in)) {
+            $this->addError('date', 'Check-out must be after check-in.');
+            return;
+        }
+
+        $pivot->update(['check_out' => $newCheckOut]);
+
+        // redraw calendar
+        $this->version++;
+    }
+
     public function getBookingsProperty(): Collection
     {
         $this->version;
