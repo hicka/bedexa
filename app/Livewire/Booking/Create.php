@@ -6,6 +6,8 @@ use App\Models\Booking;
 use App\Models\BookingSource;
 use App\Models\Guest;
 use App\Models\Room;
+use App\Models\Setting;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -18,6 +20,13 @@ class Create extends Component
 
     public ?int $booking_source_id = null;
     public array $rooms = [['room_id' => null, 'check_in' => null, 'check_out' => null, 'price' => null]];
+
+    public float $subTotal   = 0;   // auto-calculated
+    public float $serviceCharge = 0;
+    public float $tgst       = 0;
+    public float $greenTax   = 0;
+    public float $total      = 0;
+
     public array $guest_ids = [];
     public string $status = 'reserved';
     public ?string $notes = '';
@@ -59,6 +68,51 @@ class Create extends Component
                 'price' => $br->price,
             ])->toArray();
         }
+        $this->recalcTotals();
+    }
+
+    public function updatedRooms() {           // Livewire v3 “updated{Prop}”
+        $this->recalcTotals();
+    }
+
+    private function recalcTotals(): void
+    {
+        $sum = 0;
+
+        foreach ($this->rooms as $room) {
+            if (!$room['room_id'] || !$room['check_in'] || !$room['check_out']) {
+                continue;                      // skip incomplete lines
+            }
+
+            $nights = \Carbon\Carbon::parse($room['check_in'])
+                ->diffInDays($room['check_out']);
+
+            /* fallback to default rate when no manual price */
+            $rate = $room['price'] ?: \App\Models\Room::find($room['room_id'])->default_rate;
+
+            $sum += $rate * $nights;
+        }
+
+        $this->subTotal = round($sum, 2);
+
+        $tgstRate   = Setting::value('tgst_rate', 0.17);          // default 12 %
+        $scRate     = Setting::value('service_charge_rate', 0.10);
+        $greenNight = Setting::value('green_tax_per_night', 12);
+
+        $this->serviceCharge = round($this->subTotal * $scRate, 2);
+        $this->tgst          = round(($this->subTotal + $this->serviceCharge) * $tgstRate, 2);
+
+        $this->greenTax = round(
+            array_sum(array_map(function($r) use ($greenNight){
+                return ($r['room_id'] && $r['check_in'] && $r['check_out'])
+                    ? Carbon::parse($r['check_in'])
+                        ->diffInDays($r['check_out']) * $greenNight
+                    : 0;
+            }, $this->rooms)),
+            2
+        );
+
+        $this->total = $this->subTotal + $this->serviceCharge + $this->tgst + $this->greenTax;
     }
 
     /* ---- Room handlers ---- */

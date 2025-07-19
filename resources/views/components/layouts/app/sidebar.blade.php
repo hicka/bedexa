@@ -2,16 +2,6 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         @include('partials.head')
-        <style>
-            /* optional translucent preview while dragging */
-            td[style*="--ghost-days"]::after {
-                content:'';
-                position:absolute;inset:0;
-                background:rgba(0,0,0,.12);
-                width:calc(100% + var(--ghost-days) * 7rem);
-                pointer-events:none;
-            }
-        </style>
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
@@ -159,62 +149,82 @@
     </body>
 
     <script>
-        function resizeBar(pivotId, checkOutStr) {
+        function resizeBar(pivotId, outStr) {
             return {
+                /* ----- state ----- */
                 pivotId,
-                outDate : new Date(checkOutStr),
+                outDate   : new Date(outStr),   // original check-out
+                dayPx     : 0,                  // px width of 1 calendar day
+                startX    : 0,
+                diffDays  : 0,                  // signed day delta while dragging
+                rafId     : null,               // requestAnimationFrame id
 
-                startX  : 0,
-                dragDays: 0,
-                dayPx   : 0,      // derived on first drag
-
+                /* ----- pointer down ----- */
                 begin(ev) {
                     this.startX = ev.clientX;
 
-                    /* width of ONE day – calculate once with fallback */
+                    /* measure one-day width once */
                     if (!this.dayPx) {
-                        const guess = this.$el.offsetWidth / this.$el.colSpan;
-                        this.dayPx  = guess > 0 ? guess : 112;   // 112 px = w-28
+                        const cellWidth = this.$el.offsetWidth / this.$el.colSpan;
+                        this.dayPx      = cellWidth || 112;         // fallback to 112 px
                     }
 
+                    /* keep events even outside handle */
                     ev.target.setPointerCapture(ev.pointerId);
 
-                    const move = evt => {
-                        this.dragDays = Math.round((evt.clientX - this.startX) / this.dayPx);
-                        this.$el.style.setProperty('--ghost', this.dragDays);  // preview overlay
+                    /* pointer-move */
+                    ev.target.onpointermove = evt => {
+                        this.diffDays = Math.round((evt.clientX - this.startX) / this.dayPx);
+
+                        /* ------- rAF paint callback -------- */
+                        this.$el.style.setProperty('--ghost-px', this.diffDays * this.dayPx);
                     };
 
-                    const up = evt => {
+                    /* pointer-up */
+                    ev.target.onpointerup = evt => {
+                        /* remove listeners */
                         ev.target.onpointermove = null;
                         ev.target.onpointerup   = null;
-                        this.$el.style.removeProperty('--ghost');
+                        cancelAnimationFrame(this.rafId);
 
-                        if (!this.dragDays) return;     // 0 → no change
+                        /* clear overlay */
+                        this.$el.style.removeProperty('--ghost-px');
 
+                        if (!this.diffDays) return;  // no visual change → nothing to save
+
+                        /* compute new check-out */
                         const newOut = new Date(this.outDate);
-                        newOut.setDate(newOut.getDate() + this.dragDays);
+                        newOut.setDate(newOut.getDate() + this.diffDays);
 
+                        /* Livewire action */
                         this.$wire.updateBookingRoomDates(
                             this.pivotId,
-                            newOut.toISOString().slice(0,10)
+                            newOut.toISOString().slice(0, 10)       // YYYY-MM-DD
                         );
                     };
-
-                    ev.target.onpointermove = move;
-                    ev.target.onpointerup   = up;
                 }
             };
         }
     </script>
 
     <style>
-        /* ghost overlay while dragging */
-        td[style*="--ghost"]::after{
+        /* --- preview overlay (left or right) --- */
+        td[style*="--ghost-px"]{
+            position:relative;    /* establish a containing block */
+        }
+
+        td[style*="--ghost-px"]::after{
             content:'';
-            position:absolute;inset:0;
-            background:rgba(0,0,0,.12);
-            width:calc(100% + var(--ghost) * 7rem);
+            position:absolute; top:0; bottom:0;
+            z-index:1;                       /* over the anchor */
+            background:rgba(0,0,0,.15);
             pointer-events:none;
+
+            /* extend or shrink */
+            width:calc( var(--ghost-px) * 1px );
+            /* grow right when positive, left when negative */
+            left: calc(var(--ghost-px) > 0 ? 100% : auto);
+            right:calc(var(--ghost-px) < 0 ? 100% : auto);
         }
     </style>
 </html>

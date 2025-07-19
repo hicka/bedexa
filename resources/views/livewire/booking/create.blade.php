@@ -115,6 +115,34 @@
         <livewire:booking.payments :booking="$booking" wire:key="payments-{{ $bookingId }}" />
     @endif
 
+
+    {{-- Real-time totals ---------------------------------------------------}}
+    <x-card class="md:col-span-2 bg-slate-50 dark:bg-slate-800">
+        <div class="flex flex-col gap-2 text-sm">
+            <div class="flex justify-between">
+                <span>Room Sub-total</span>
+                <span class="font-medium">${{ number_format($subTotal, 2) }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Service Charge</span>
+                <span class="font-medium">${{ number_format($serviceCharge, 2) }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>TGST (12%)</span>
+                <span>${{ number_format($tgst, 2) }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span>Green Tax</span>
+                <span>${{ number_format($greenTax, 2) }}</span>
+            </div>
+            <hr class="my-1 border-slate-300 dark:border-slate-600">
+            <div class="flex justify-between text-lg font-semibold">
+                <span>Total</span>
+                <span>${{ number_format($total, 2) }}</span>
+            </div>
+        </div>
+    </x-card>
+
     {{-- ───────────── Actions ───────────── --}}
     <div class="flex justify-end gap-3">
         <x-button variant="ghost" href="{{ route('bookings.index') }}">Cancel</x-button>

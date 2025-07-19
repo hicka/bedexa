@@ -1,15 +1,3 @@
-@section('css')
-    <style>
-        td[style*="--drag-days"]::after {
-            content: '';
-            position: absolute; inset: 0;
-            background: rgba(0,0,0,.1);
-            /* width grows via the inline var set in onMove: */
-            width: calc(100% + var(--drag-days) * 7rem);
-            pointer-events: none;
-        }
-    </style>
-    @endsection
 <div>
 
     <x-page-heading title="Reservations"/>
@@ -19,8 +7,8 @@
 
         {{-- Prev / Next buttons --}}
         <div class="flex items-center gap-2">
-            <x-button size="sm" variant="ghost"  wire:click="prevMonth">« Prev</x-button>
-            <x-button size="sm" variant="ghost"  wire:click="nextMonth">Next »</x-button>
+            <x-button size="sm" variant="ghost" wire:click="prevMonth">« Prev</x-button>
+            <x-button size="sm" variant="ghost" wire:click="nextMonth">Next »</x-button>
         </div>
 
         {{-- Current month label --}}
@@ -29,10 +17,10 @@
         </h2>
 
         {{-- Month picker --}}
-        <input  type="month"
-                value="{{ $month }}"
-                class="border rounded px-2 py-1 text-sm dark:bg-slate-900 dark:border-slate-600"
-                wire:change="gotoMonth($event.target.value)">
+        <input type="month"
+               value="{{ $month }}"
+               class="border rounded px-2 py-1 text-sm dark:bg-slate-900 dark:border-slate-600"
+               wire:change="gotoMonth($event.target.value)">
     </div>
 
     {{-- Legend --}}
@@ -46,7 +34,7 @@
     <div x-data
          @keydown.window.arrow-left="$wire.prevMonth()"
          @keydown.window.arrow-right="$wire.nextMonth()"
-         class="overflow-x-auto" >
+         class="overflow-x-auto">
         <table wire:key="calendar-{{ $month }}-{{ $version }}" class="border-collapse min-w-[900px]">
             <thead class="sticky top-0 bg-white dark:bg-slate-900 z-10">
             <tr>
@@ -64,9 +52,11 @@
             @foreach ($rooms as $room)
                 {{-- Room type heading row --}}
                 @if ($currentType !== $room->room_type_id)
-                    <tr><td colspan="{{ $dates->count()+1 }}" class="bg-slate-100 dark:bg-slate-800 font-semibold px-2">
+                    <tr>
+                        <td colspan="{{ $dates->count()+1 }}" class="bg-slate-100 dark:bg-slate-800 font-semibold px-2">
                             {{ $room->type->name }}
-                        </td></tr>
+                        </td>
+                    </tr>
                     @php $currentType = $room->room_type_id; @endphp
                 @endif
 
@@ -128,18 +118,18 @@
                                 $pivotId = $booking->id;
                             @endphp
 
-                            <td  colspan="{{ $span }}"
-                                 style="width: {{ $span * 7 }}rem"
-                                 class="relative h-12 border-r border-dashed p-0
+                            <td colspan="{{ $span }}"
+                                style="width: {{ $span * 7 }}rem"
+                                class="relative h-12 border-r border-dashed p-0
             {{ $c['bg'] }} {{ $c['text'] }}"
-                                 x-data="resizeBar(
+                                x-data="resizeBar(
          {{ $pivotId }},
          '{{ $booking->check_out->toDateString() }}'
      )">
 
 
-                            <a href="{{ route('bookings.edit', $booking->booking) }}"
-                                   class="flex items-center h-full w-full text-xs whitespace-nowrap overflow-hidden">
+                                <a href="{{ route('bookings.edit', $booking->booking) }}"
+                                   class="flex items-center h-full w-full text-xs whitespace-nowrap overflow-hidden z-0">
 
                                     <span class="h-full w-1.5 mr-2 {{ $c['bar'] }} rounded-l-md"></span>
 
@@ -163,7 +153,7 @@
                                 <span class="absolute right-0 top-0 h-full w-3 cursor-ew-resize"
                                       style="margin-right:-2px"
                                       @pointerdown.stop.prevent="begin($event)"></span>
-</span>
+                                </span>
                             </td>
 
                             @php
@@ -182,5 +172,5 @@
             </tbody>
         </table>
     </div>
-    <livewire:booking.quick-create wire:key="quick-booking" />
+    <livewire:booking.quick-create wire:key="quick-booking"/>
 </div>
