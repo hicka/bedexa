@@ -117,7 +117,7 @@
 
 
     {{-- Real-time totals ---------------------------------------------------}}
-    <x-card class="md:col-span-2 bg-slate-50 dark:bg-slate-800">
+    <x-card x-data="guest--{{count($this->guest_ids)}}" class="md:col-span-2 bg-slate-50 dark:bg-slate-800">
         <div class="flex flex-col gap-2 text-sm">
             <div class="flex justify-between">
                 <span>Room Sub-total</span>
@@ -125,7 +125,7 @@
             </div>
             <div class="flex justify-between">
                 <span>Service Charge</span>
-                <span class="font-medium">${{ number_format($serviceCharge, 2) }}</span>
+                <span>${{ number_format($serviceCharge,2) }}</span>
             </div>
             <div class="flex justify-between">
                 <span>TGST (12%)</span>

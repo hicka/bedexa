@@ -37,7 +37,9 @@ class Create extends Component
     public Collection $guests;
     public Collection $sources;
 
-    protected $listeners = ['guestsSelected' => 'updateGuestIds'];
+    protected $listeners = [
+        'guestsSelected' => 'updateGuestIds',
+    ];
 
     public function mount($booking = null)
     {
@@ -77,42 +79,52 @@ class Create extends Component
 
     private function recalcTotals(): void
     {
-        $sum = 0;
+        /* ----------  room subtotal (unchanged)  ---------- */
+        $sum = 0; $totalNights = 0;
 
         foreach ($this->rooms as $room) {
-            if (!$room['room_id'] || !$room['check_in'] || !$room['check_out']) {
-                continue;                      // skip incomplete lines
-            }
+            if (!$room['room_id'] || !$room['check_in'] || !$room['check_out']) continue;
 
-            $nights = \Carbon\Carbon::parse($room['check_in'])
+            $nights = Carbon::parse($room['check_in'])
                 ->diffInDays($room['check_out']);
 
-            /* fallback to default rate when no manual price */
-            $rate = $room['price'] ?: \App\Models\Room::find($room['room_id'])->default_rate;
+            $rate   = $room['price']
+                ?: \App\Models\Room::find($room['room_id'])->default_rate;
 
-            $sum += $rate * $nights;
+            $sum          += $rate * $nights;
+            $totalNights  += $nights;
         }
 
         $this->subTotal = round($sum, 2);
 
-        $tgstRate   = Setting::value('tgst_rate', 0.17);          // default 12 %
-        $scRate     = Setting::value('service_charge_rate', 0.10);
-        $greenNight = Setting::value('green_tax_per_night', 12);
+        /* ----------  read rates from settings  ---------- */
+        $scRate     = Setting::value('service_charge_rate',    0.10);
+        $tgstRate   = Setting::value('tgst_rate',              0.17);
+        $greenNight = Setting::value('green_tax_per_night',    12);
 
+        /* ----------  taxes & fees  ---------- */
         $this->serviceCharge = round($this->subTotal * $scRate, 2);
-        $this->tgst          = round(($this->subTotal + $this->serviceCharge) * $tgstRate, 2);
 
-        $this->greenTax = round(
-            array_sum(array_map(function($r) use ($greenNight){
-                return ($r['room_id'] && $r['check_in'] && $r['check_out'])
-                    ? Carbon::parse($r['check_in'])
-                        ->diffInDays($r['check_out']) * $greenNight
-                    : 0;
-            }, $this->rooms)),
+        $this->tgst = round(
+            ($this->subTotal + $this->serviceCharge) * $tgstRate,
             2
         );
 
-        $this->total = $this->subTotal + $this->serviceCharge + $this->tgst + $this->greenTax;
+        /* ----------  GREEN-TAX (foreign guests only)  ---------- */
+        $foreignGuests = \App\Models\Guest::whereIn('id', $this->guest_ids)
+            ->where('type', 'foreign')           // foreign vs local
+            ->count();
+
+        Log::info("Foreign guests $foreignGuests");
+
+        $this->greenTax = round(
+            $totalNights * $foreignGuests * $greenNight,
+            2
+        );
+
+        /* ----------  grand total  ---------- */
+        $this->total = $this->subTotal + $this->serviceCharge
+            + $this->tgst     + $this->greenTax;
     }
 
     /* ---- Room handlers ---- */
@@ -132,6 +144,7 @@ class Create extends Component
     public function updateGuestIds($ids)
     {
         $this->guest_ids = $ids;
+        $this->recalcTotals();
     }
 
     /* ---- Save Booking ---- */

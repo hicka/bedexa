@@ -30,11 +30,13 @@ class GuestPicker extends Component
             $this->guest_ids[] = $id;
         }
         $this->reset('search');
+        $this->dispatch('guestsSelected', ids: $this->guest_ids);
     }
 
     public function removeGuest($id)
     {
         $this->guest_ids = array_diff($this->guest_ids, [$id]);
+        $this->dispatch('guestsSelected', ids: $this->guest_ids);
     }
 
     /* ------- modal ------- */
