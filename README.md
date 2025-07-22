@@ -1,3 +1,7 @@
+
+
+<img width="2096" height="640" alt="bedexa_preview" src="https://github.com/user-attachments/assets/dd21951d-354b-4694-9c00-95d08e4acc91" />
+
 # Bedexa
 
 Bedexa is a modern, modular Hotel Management System built with Laravel, Livewire, Blade and Tailwind CSS. Designed from the ground up for small guesthouses and boutique hotels, especially in the Maldives. Bedexa gives you full control over your property without sacrificing flexibility or style. Under the Business Source License 1.1, you’re free to self-host, extend, and customize; after July 23, 2028 the code will automatically relicense under GPL 3.0+.
